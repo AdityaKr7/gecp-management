@@ -1,0 +1,154 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isFacultyOfBranch(branch) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid)).data.branch == branch;
+    }
+
+    function isStudent(uid) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'student';
+    }
+
+    // --- Users ---
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid) 
+        && request.resource.data.keys().hasAll(['uid', 'role', 'firstName', 'lastName', 'email'])
+        && request.resource.data.role in ['student', 'faculty'];
+      allow update: if isOwner(uid) && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['firstName', 'lastName']));
+    }
+
+    // --- Student Profiles ---
+    match /studentProfiles/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid) || (
+        isFacultyOfBranch(resource.data.branch)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isVerified', 'verifiedBy'])
+      );
+    }
+
+    // --- Faculty Profiles ---
+    match /facultyProfiles/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isOwner(uid);
+    }
+
+    // --- Student Requests ---
+    match /studentRequests/{requestId} {
+      allow create: if isSignedIn() && request.resource.data.studentUid == request.auth.uid;
+      allow read, list: if isSignedIn() && (
+        resource.data.studentUid == request.auth.uid || 
+        isFacultyOfBranch(resource.data.branch)
+      );
+      allow update: if isFacultyOfBranch(resource.data.branch)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if isSignedIn() && resource.data.studentUid == request.auth.uid;
+    }
+
+    // --- Attendance ---
+    function isValidAttendance(data) {
+      return data.keys().hasAll(['student_id', 'student_name', 'faculty_id', 'date', 'status', 'timestamp'])
+        && data.keys().size() == 6
+        && data.student_id is string
+        && data.student_name is string
+        && data.faculty_id is string
+        && data.date is string && data.date.size() == 10
+        && data.status in ['present', 'absent']
+        && data.timestamp is timestamp;
+    }
+
+    match /attendance/{recordId} {
+      allow read, list: if isSignedIn() && (
+        resource.data.student_id == request.auth.uid || 
+        exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid))
+      );
+      
+      allow create, update: if isSignedIn() && 
+        exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid)) &&
+        isValidAttendance(request.resource.data) &&
+        request.resource.data.faculty_id == request.auth.uid;
+    }
+
+    // --- Assignments ---
+    match /assignments/{id} {
+      allow read, list: if isSignedIn();
+      allow create, update: if isSignedIn() 
+        && exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid))
+        && request.resource.data.facultyId == request.auth.uid;
+      allow delete: if isSignedIn()
+        && resource.data.facultyId == request.auth.uid;
+    }
+
+    // --- Submissions ---
+    match /submissions/{id} {
+      allow read, list: if isSignedIn() && (
+        resource.data.studentId == request.auth.uid || 
+        exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid))
+      );
+      allow create: if isSignedIn() && request.resource.data.studentId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (resource.data.studentId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['textResponse', 'fileUrl', 'submittedAt', 'updatedAt', 'status'])) ||
+        (exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid)) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'studentName', 'assignmentId', 'studentId']))
+      );
+    }
+
+    // --- Examination Alerts ---
+    match /examinationAlerts/{id} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() 
+        && exists(/databases/$(database)/documents/facultyProfiles/$(request.auth.uid));
+    }
+
+    // --- Clubs ---
+    match /clubs/{clubName} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && !exists(/databases/$(database)/documents/clubs/$(clubName));
+      allow update: if isSignedIn() && resource.data.adminId == request.auth.uid;
+
+      match /members/{studentId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSignedIn() && get(/databases/$(database)/documents/clubs/$(clubName)).data.adminId == request.auth.uid;
+      }
+      
+      match /requests/{requestId} {
+        allow read: if isSignedIn() && (resource.data.studentUid == request.auth.uid || get(/databases/$(database)/documents/clubs/$(clubName)).data.adminId == request.auth.uid);
+        allow create: if isSignedIn() && request.resource.data.studentUid == request.auth.uid;
+        allow update: if isSignedIn() && get(/databases/$(database)/documents/clubs/$(clubName)).data.adminId == request.auth.uid;
+      }
+    }
+
+    match /clubAdmins/{adminId} {
+      allow read, write: if true;
+    }
+    match /clubStudents/{studentId} {
+      allow read, write: if true;
+    }
+    match /clubRequests/{requestId} {
+      allow read, write: if true;
+    }
+    match /clubEvents/{eventId} {
+      allow read, write: if true;
+    }
+  }
+}
