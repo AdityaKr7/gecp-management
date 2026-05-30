@@ -32,8 +32,8 @@ export default function Clubs() {
   const navigate = useNavigate();
 
   return (
-    <div className="space-y-12 pb-20 px-4 md:px-0">
-      <header className="text-center space-y-4 max-w-2xl mx-auto">
+    <div className="space-y-12 pb-20 px-4 md:px-0 mt-2">
+      <header className="text-center space-y-4 max-w-2xl mx-auto pl-1">
         <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">Campus Life & Clubs</h1>
         <p className="text-sm md:text-base text-gray-500 font-medium">Beyond academics—find your tribe and fuel your passion.</p>
       </header>
@@ -67,7 +67,7 @@ export default function Clubs() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 my-12">
+      <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 my-12 space-y-6">
         {[d1, d2, img3, img4, img6, img7, img8, img9]
           .sort(() => Math.random() - 0.5)
           .map((src, i) => (
@@ -76,14 +76,15 @@ export default function Clubs() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              className="group overflow-hidden rounded-[2.5rem] bg-gray-100 shadow-sm hover:shadow-xl transition-all"
+              className="group overflow-hidden rounded-3xl bg-gray-100 shadow-sm hover:shadow-2xl transition-all duration-300 break-inside-avoid relative"
             >
               <img 
                 src={src} 
                 alt={`Club Activity ${i + 1}`} 
-                className="w-full aspect-[4/3] object-cover transition-transform duration-700 group-hover:scale-110" 
+                className="w-full h-auto transition-transform duration-700 group-hover:scale-105" 
                 referrerPolicy="no-referrer"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </motion.div>
           ))}
       </div>

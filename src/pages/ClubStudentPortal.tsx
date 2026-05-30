@@ -53,7 +53,13 @@ export default function ClubStudentPortal() {
           where('firstName', '==', studentInfo.firstName),
           where('lastName', '==', studentInfo.lastName)
         );
-        const snapStudents = await getDocs(qStudents);
+        let snapStudents;
+        try {
+          snapStudents = await getDocs(qStudents);
+        } catch (err: any) {
+          handleFirestoreError(err, OperationType.LIST, 'clubStudents');
+          return;
+        }
         
         if (!snapStudents.empty) {
           setStudentStatus('approved');
@@ -76,7 +82,13 @@ export default function ClubStudentPortal() {
           where('firstName', '==', studentInfo.firstName),
           where('lastName', '==', studentInfo.lastName)
         );
-        const snapRequests = await getDocs(qRequests);
+        let snapRequests;
+        try {
+          snapRequests = await getDocs(qRequests);
+        } catch (err: any) {
+          handleFirestoreError(err, OperationType.LIST, 'clubRequests');
+          return;
+        }
         
         if (!snapRequests.empty) {
           const req = snapRequests.docs[0].data();
@@ -137,25 +149,36 @@ export default function ClubStudentPortal() {
         where('clubId', '==', clubName),
         where('registrationNo', '==', registrationNo)
       );
-      const exists = await getDocs(q);
-      if (!exists.empty) {
+      let exists;
+      try {
+        exists = await getDocs(q);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.LIST, 'clubRequests');
+        setLoading(false);
+        return;
+      }
+      if (exists && !exists.empty) {
         toast.error('You have already applied.');
         setLoading(false);
         return;
       }
 
-      await addDoc(collection(db, 'clubRequests'), {
-        clubId: clubName,
-        firstName,
-        lastName,
-        branch,
-        session,
-        registrationNo,
-        mobileNo,
-        post,
-        status: 'pending',
-        createdAt: new Date()
-      });
+      try {
+        await addDoc(collection(db, 'clubRequests'), {
+          clubId: clubName,
+          firstName,
+          lastName,
+          branch,
+          session,
+          registrationNo,
+          mobileNo,
+          post,
+          status: 'pending',
+          createdAt: new Date()
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.CREATE, 'clubRequests');
+      }
 
       localStorage.setItem(`studentAuth_${clubName}`, JSON.stringify({ branch, registrationNo, mobileNo }));
       setStudentStatus('pending');
@@ -184,9 +207,16 @@ export default function ClubStudentPortal() {
         where('registrationNo', '==', registrationNo),
         where('mobileNo', '==', mobileNo)
       );
-      const studentSnap = await getDocs(qStudents);
+      let studentSnap;
+      try {
+        studentSnap = await getDocs(qStudents);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.LIST, 'clubStudents');
+        setLoading(false);
+        return;
+      }
 
-      if (!studentSnap.empty) {
+      if (studentSnap && !studentSnap.empty) {
         const data = studentSnap.docs[0].data();
         localStorage.setItem(`studentAuth_${clubName}`, JSON.stringify({ branch, registrationNo, mobileNo }));
         setStudentStatus('approved');
@@ -206,9 +236,16 @@ export default function ClubStudentPortal() {
         where('registrationNo', '==', registrationNo),
         where('mobileNo', '==', mobileNo)
       );
-      const reqSnap = await getDocs(qRequests);
+      let reqSnap;
+      try {
+        reqSnap = await getDocs(qRequests);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.LIST, 'clubRequests');
+        setLoading(false);
+        return;
+      }
 
-      if (!reqSnap.empty) {
+      if (reqSnap && !reqSnap.empty) {
         const data = reqSnap.docs[0].data();
         localStorage.setItem(`studentAuth_${clubName}`, JSON.stringify({ branch, registrationNo, mobileNo }));
         setFirstName(data.firstName);

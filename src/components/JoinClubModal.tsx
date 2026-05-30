@@ -25,15 +25,23 @@ export default function JoinClubModal({ onClose, clubName }: JoinClubModalProps)
   useEffect(() => {
     const checkClubAdmin = async () => {
       if (!auth.currentUser) return;
-      const docRef = doc(db, 'clubs', clubName);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.adminId) {
-          setIsAdminAssigned(true);
-          if (data.adminId === auth.currentUser.uid) {
-            setIsClubAdmin(true);
+      try {
+        const docRef = doc(db, 'clubs', clubName);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.adminId) {
+            setIsAdminAssigned(true);
+            if (data.adminId === auth.currentUser.uid) {
+              setIsClubAdmin(true);
+            }
           }
+        }
+      } catch (err: any) {
+        if (err.message?.includes('offline')) {
+          console.warn("Offline: Using local cache for club data");
+        } else {
+          handleFirestoreError(err, OperationType.GET, `clubs/${clubName}`);
         }
       }
     };

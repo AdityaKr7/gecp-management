@@ -3,7 +3,7 @@ import { User } from 'lucide-react';
 const withBase = (path: string) => `${import.meta.env.BASE_URL}${path.startsWith('/') ? path.slice(1) : path}`;
 
 const FACULTY = [
-  { id: 1, name: "Prof. Bhawesh Kumar", role: "HOD, CSE", branch: "Computer Science and Engineering", pic: withBase("/faculty/bhawesh.png"), linkedin: "#" },
+  { id: 1, name: "Prof. Bhawesh Kumar", role: "HOD, CSE", branch: "Computer Science and Engineering", pic: withBase("/faculty/bhawesh.png"), linkedin: "https://www.bitsindri.ac.in/old/faculty-profile/bhawesh.html" },
   { id: 2, name: "Dr. Vineet Shekher", role: "HOD. EE", branch: "Electrical Engineering", pic: withBase("/faculty/vinit.png"), linkedin: "https://www.linkedin.com/in/dr-vineet-shekher-1b7067368"},
   { id: 3, name: "Dr. Pankaj Kumar", role: "HOD. ME", branch: "Mechanical Engineering", pic: withBase("/faculty/pankaj.png"), linkedin: "#" },
   { id: 4, name: "Prof. Ran Vijay Singh", role: "HOD. CE", branch: "Civil Engineering", pic: withBase("/faculty/ranvijay.jpeg"), linkedin: "https://www.linkedin.com/in/prof-ran-vijay-singh-a1a76339" },
@@ -19,13 +19,13 @@ const FACULTY = [
 
 export default function Faculty() {
   return (
-    <div className="space-y-12 pb-20 px-4 md:px-0">
-      <header className="text-center space-y-4 max-w-2xl mx-auto">
+    <div className="space-y-12 pb-20 px-1 md:px-0">
+      <header className="text-center space-y-4 max-w-2xl mx-auto px-1">
         <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">Our Distinguished Faculty</h1>
         <p className="text-sm md:text-base text-gray-500 font-medium">World-class educators and researchers leading the way in academic brilliance.</p>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 px-1">
         {FACULTY.map((f, i) => (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}

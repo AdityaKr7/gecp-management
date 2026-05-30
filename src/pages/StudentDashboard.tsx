@@ -36,6 +36,8 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
   const [profilePic, setProfilePic] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [hoveredAlertId, setHoveredAlertId] = useState<string | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<any | null>(null);
 
   const getInitials = (first: string, last: string) => {
     return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
@@ -92,6 +94,8 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
         a.targetBranches.includes(profile.branch) && 
         (a.targetSessions.length === 0 || a.targetSessions.includes(profile.session))
       ));
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'examinationAlerts');
     });
 
     const qAssignments = query(
@@ -120,11 +124,15 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
     const unsubA = onSnapshot(qAssignments, (snap) => {
       currentAssignments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updatePendingCount();
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'assignments');
     });
 
     const unsubS = onSnapshot(qSubmissions, (snap) => {
       currentSubmissions = snap.docs.map(d => d.data() as { assignmentId: string });
       updatePendingCount();
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'submissions');
     });
 
     return () => {
@@ -170,14 +178,22 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
         createdAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, 'studentRequests', user.uid), requestData);
+      try {
+        await setDoc(doc(db, 'studentRequests', user.uid), requestData);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.WRITE, `studentRequests/${user.uid}`);
+      }
       
       // Also create unverified profile locally
-      await setDoc(doc(db, 'studentProfiles', user.uid), {
-        ...requestData,
-        uid: user.uid,
-        isVerified: false
-      });
+      try {
+        await setDoc(doc(db, 'studentProfiles', user.uid), {
+          ...requestData,
+          uid: user.uid,
+          isVerified: false
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.WRITE, `studentProfiles/${user.uid}`);
+      }
 
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, path);
@@ -482,7 +498,7 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
 
   // 3. Main Dashboard (Verified)
   return (
-    <div className="space-y-12 pb-20">
+    <div className="space-y-12 pb-20 m-2">
       {/* User Menu */}
       <div className="fixed top-4 right-4 md:top-6 md:right-6 z-50">
         <button 
@@ -534,7 +550,7 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
       
       {activeView === 'main' && (
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 md:p-8 rounded-[2rem] md:rounded-3xl border border-gray-100 shadow-sm transition-colors duration-300">
-        <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+        <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left px-1">
           <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-blue-50 transition-all shrink-0">
             <img src={profile?.profilePicture || defaultProfileImg} alt="Avatar" className="w-full h-full object-cover" />
           </div>
@@ -570,15 +586,14 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
           >
             <section className="space-y-6">
               <h3 className="text-2xl font-black text-gray-900 px-2 flex items-center gap-2">
-                Dashboard <span className="text-xs font-normal text-gray-400">(Drag to reorder)</span>
+                Dashboard
               </h3>
               
-              <Reorder.Group axis="y" values={items} onReorder={setItems} className="grid md:grid-cols-3 gap-6">
+              <div className="grid md:grid-cols-3 gap-6">
                 {items.map((item) => (
-                  <Reorder.Item 
+                  <div 
                     key={item.id} 
-                    value={item}
-                    className="group cursor-grab active:cursor-grabbing"
+                    className="group"
                   >
                     <div className="h-full bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 relative">
                       {item.id === 'assignments' && pendingAssignmentsCount > 0 && (
@@ -600,9 +615,9 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
                         Open Records
                       </button>
                     </div>
-                  </Reorder.Item>
+                  </div>
                 ))}
-              </Reorder.Group>
+              </div>
             </section>
 
             <div className="grid md:grid-cols-2 gap-8">
@@ -664,21 +679,23 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
                             {alerts.map(alert => {
                 const date = new Date(alert.createdAt);
                 return (
-                  <div key={alert.id} className="bg-white p-6 rounded-2xl border border-gray-100 space-y-3 shadow-sm">
-                    <div className="flex justify-between items-center text-xs text-gray-400 font-bold uppercase tracking-widest">
-                      <span>{date.toLocaleDateString()}</span>
-                      <span>{date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                    <h4 className="font-black text-gray-900 text-lg">{alert.title}</h4>
-                    <p className="text-gray-600 font-medium leading-relaxed">{alert.content}</p>
-                    {alert.fileData && (
-                      <button 
-                        onClick={() => window.open(alert.fileData)}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-sm font-bold hover:bg-blue-100 transition-all"
-                      >
-                        <Eye className="w-4 h-4" /> View Attachment
-                      </button>
+                    <div 
+                    key={alert.id} 
+                    className="bg-white p-6 rounded-full border border-gray-100 space-y-3 shadow-sm transition-all relative overflow-hidden cursor-pointer"
+                    onMouseEnter={() => setHoveredAlertId(alert.id)}
+                    onMouseLeave={() => setHoveredAlertId(null)}
+                    onClick={() => setSelectedAlert(alert)}
+                  >
+                    {hoveredAlertId === alert.id && (
+                      <div className="absolute inset-0 bg-gray-50 flex flex-col items-center justify-center p-6 text-center z-10 rounded-full border-4 border-white">
+                        <p className="text-xs font-black text-gray-900 uppercase tracking-widest">
+                          Announced by: {alert.facultyName || 'Faculty'}<br />
+                          {date.toLocaleDateString()} at {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
                     )}
+                    <h4 className="font-black text-gray-900 text-lg px-2">{alert.title}</h4>
+                    <p className="text-gray-600 font-medium leading-relaxed px-2 line-clamp-2">{alert.content}</p>
                   </div>
                 );
               })}
@@ -699,6 +716,55 @@ export default function StudentDashboard({ user }: StudentDashboardProps) {
               <ArrowLeft className="w-4 h-4" /> Back to Dashboard
             </button>
             {profile && <AssignmentTracker student={profile} />}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {selectedAlert && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" 
+            onClick={() => setSelectedAlert(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white p-8 rounded-[2rem] max-w-lg w-full space-y-6 shadow-2xl" 
+              onClick={e => e.stopPropagation()}
+            >
+              <h3 className="text-2xl font-black">{selectedAlert.title}</h3>
+              <p className="text-gray-600">{selectedAlert.content}</p>
+              {selectedAlert.fileData && (
+                Array.isArray(selectedAlert.fileData) ? (
+                  selectedAlert.fileData.map((link: any, index: number) => (
+                    <button 
+                      key={index}
+                      onClick={() => window.open(typeof link === 'string' ? link : link.url)}
+                      className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
+                    >
+                      <Eye className="w-5 h-5" /> {typeof link === 'string' ? `Document ${index+1}` : link.label || 'View Document'}
+                    </button>
+                  ))
+                ) : (
+                  <button 
+                    onClick={() => window.open(selectedAlert.fileData)}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
+                  >
+                    <Eye className="w-5 h-5" /> View Attached Document
+                  </button>
+                )
+              )}
+              <button 
+                onClick={() => setSelectedAlert(null)}
+                className="w-full py-4 bg-gray-100 text-gray-700 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Close
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

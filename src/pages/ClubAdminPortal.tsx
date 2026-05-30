@@ -53,6 +53,7 @@ export default function ClubAdminPortal() {
   const [eventTitle, setEventTitle] = useState('');
   const [eventDesc, setEventDesc] = useState('');
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if already authenticated this session
@@ -106,11 +107,15 @@ export default function ClubAdminPortal() {
     e.preventDefault();
     setIsVerifying(true);
     try {
-      await addDoc(collection(db, 'clubAdmins'), {
-        ...formData,
-        clubId: clubName,
-        createdAt: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, 'clubAdmins'), {
+          ...formData,
+          clubId: clubName,
+          createdAt: serverTimestamp()
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.CREATE, 'clubAdmins');
+      }
       toast.success('Admin registered successfully! Please login.');
       setAuthMode('login');
       setFormData({
@@ -140,9 +145,16 @@ export default function ClubAdminPortal() {
         where('mobileNo', '==', formData.mobileNo)
       );
       
-      const snap = await getDocs(q);
+      let snap;
+      try {
+        snap = await getDocs(q);
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.LIST, 'clubAdmins');
+        setIsVerifying(false);
+        return;
+      }
       
-      if (!snap.empty) {
+      if (snap && !snap.empty) {
         localStorage.setItem(`adminAuth_${clubName}`, 'true');
         setIsAdminAuthenticated(true);
         toast.success('Login successful');
@@ -169,12 +181,16 @@ export default function ClubAdminPortal() {
 
     setIsCreatingEvent(true);
     try {
-      await addDoc(collection(db, 'clubEvents'), {
-        clubId: clubName,
-        title: eventTitle.trim(),
-        description: eventDesc.trim(),
-        createdAt: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, 'clubEvents'), {
+          clubId: clubName,
+          title: eventTitle.trim(),
+          description: eventDesc.trim(),
+          createdAt: serverTimestamp()
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.CREATE, 'clubEvents');
+      }
       toast.success('Announcement published successfully');
       setEventTitle('');
       setEventDesc('');
@@ -187,11 +203,12 @@ export default function ClubAdminPortal() {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    if (!window.confirm("Are you sure you want to delete this announcement?")) return;
     try {
       await deleteDoc(doc(db, 'clubEvents', eventId));
+      setDeleteEventId(null);
       toast.success('Announcement deleted');
-    } catch (err) {
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.DELETE, `clubEvents/${eventId}`);
       toast.error('Failed to delete announcement');
     }
   };
@@ -330,12 +347,23 @@ export default function ClubAdminPortal() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {announcements.map(ann => (
-              <div key={ann.id} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col group hover:border-indigo-100 hover:shadow-md transition">
+              <div key={ann.id} className="p-5 rounded-2xl border border-gray-100 bg-white shadow-sm flex flex-col group hover:border-indigo-100 hover:shadow-md transition relative">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="font-bold text-gray-900 text-lg">{ann.title}</h3>
-                  <button onClick={() => handleDeleteEvent(ann.id)} className="text-gray-400 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100">
+                  <button onClick={() => setDeleteEventId(ann.id)} className="text-gray-400 hover:text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  {deleteEventId === ann.id && (
+                    <div className="absolute inset-0 bg-white/30 backdrop-blur-md rounded-lg flex items-center justify-center p-3 z-50">
+                      <div className="text-center bg-white/60 p-4 rounded-lg shadow-xl border border-white/20">
+                        <p className="text-xs font-bold text-gray-900 mb-2">Are you sure?</p>
+                        <div className="flex gap-2 justify-center">
+                          <button onClick={() => setDeleteEventId(null)} className="px-2 py-0.5 bg-gray-200 text-gray-800 text-[10px] font-bold rounded-md hover:bg-gray-300">Cancel</button>
+                          <button onClick={() => handleDeleteEvent(ann.id)} className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded-md hover:bg-red-700">Delete</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <p className="text-gray-500 text-sm mb-4 flex-1 whitespace-pre-wrap">{ann.description}</p>
                 <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">

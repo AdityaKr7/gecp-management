@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db, googleProvider } from '../lib/firebase';
+import { auth, db, googleProvider, handleFirestoreError, OperationType } from '../lib/firebase';
 import { UserRole } from '../types';
 import { Mail, Lock, User as UserIcon, LogIn, UserPlus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,7 +38,17 @@ export default function Auth() {
         // Login flow
         try {
           const { user: firebaseUser } = await signInWithEmailAndPassword(auth, email, password);
-          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          let userDoc;
+          try {
+            userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          } catch (err: any) {
+            if (err.message.includes('offline') || err.message.includes('unavailable')) {
+              setError("Cannot connect to database. If you recently created this project, please ensure Cloud Firestore is enabled in your Firebase Console.");
+              await auth.signOut();
+              return;
+            }
+            throw err;
+          }
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
@@ -76,7 +86,11 @@ export default function Auth() {
             lastName,
             role
           };
-          await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+          try {
+            await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+          } catch (err: any) {
+             handleFirestoreError(err, OperationType.WRITE, `users/${firebaseUser.uid}`);
+          }
           
           if (role === 'student') {
             navigate('/student-dashboard');
@@ -104,7 +118,13 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     try {
       const { user: firebaseUser } = await signInWithPopup(auth, googleProvider);
-      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      let userDoc;
+      try {
+        userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
+        return;
+      }
       
       if (!userDoc.exists()) {
         const nameParts = firebaseUser.displayName?.split(' ') || ['', ''];
@@ -115,7 +135,11 @@ export default function Auth() {
           lastName: nameParts[1] || '',
           role: 'student' as UserRole
         };
-        await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+        try {
+          await setDoc(doc(db, 'users', firebaseUser.uid), userData);
+        } catch (err: any) {
+          handleFirestoreError(err, OperationType.WRITE, `users/${firebaseUser.uid}`);
+        }
         navigate('/student-dashboard');
       } else {
         const userData = userDoc.data();
