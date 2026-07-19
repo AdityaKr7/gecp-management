@@ -68,7 +68,7 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative min-h-[450px] md:min-h-[550px] h-auto md:h-[700px] rounded-[1.5rem] md:rounded-3xl overflow-hidden group mx-2 md:mx-0">
           <img 
-          src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
+          src="public/home/image.jpg" 
           alt="College Campus" 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />

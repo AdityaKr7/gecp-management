@@ -34,7 +34,7 @@ export default function Navbar({ user }: NavbarProps) {
         <Link to="/" className="flex items-center gap-2 group">
           <div className="p-1.5 md:p-2 bg-white rounded-lg transition-colors">
             <img 
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEeP5QNjxPsJZAMUPGX-bQj2WlQIyGQXeYDw&s" 
+              src="public/home/images.png" 
               alt="GEC Palamu Logo" 
               className="w-10 h-10 md:w-12 md:h-12 object-contain mix-blend-multiply bg-white" 
             />
