@@ -89,6 +89,17 @@
       },
       "required": ["title", "content", "createdAt"]
     },
+    "Announcement": {
+      "title": "Announcement",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "link": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "content", "createdAt"]
+    },
     "Club": {
       "title": "Club",
       "type": "object",
@@ -136,6 +147,10 @@
     "/examinationAlerts/{alertId}": {
       "schema": "ExaminationAlert",
       "description": "Examination alerts sent by faculty."
+    },
+    "/announcements/{announcementId}": {
+      "schema": "Announcement",
+      "description": "Announcements for the campus."
     },
     "/clubs/{clubName}": {
       "schema": "Club",

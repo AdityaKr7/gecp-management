@@ -206,22 +206,26 @@ export default function AssignmentTracker({ student }: AssignmentTrackerProps) {
             const expired = submission && isExpired(submission.submittedAt);
             
             if (expired) return null; // Automatically removed after 7th day as requested
+            
+            const textColorClass = 'text-gray-900';
+            const subTextColorClass = 'text-gray-400';
+            const sub2TextColorClass = 'text-gray-500';
 
             return (
               <motion.div 
                 key={assignment.id}
-                className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6 hover:shadow-xl transition-all flex flex-col relative"
+                className="p-8 rounded-[2.5rem] border border-gray-100 shadow-sm space-y-6 hover:shadow-xl transition-all flex flex-col relative bg-white"
               >
                 {/* Status Indicator Light */}
                 <div 
                   className={`absolute top-6 right-6 w-3 h-3 rounded-full ${
                     !submission 
-                      ? 'bg-rose-500 animate-intense-blink text-rose-500' 
+                      ? 'bg-rose-500 animate-pulse' 
                       : submission.status === 'pending' 
-                        ? 'bg-emerald-500 animate-intense-blink text-emerald-500'
+                        ? 'bg-green-500 animate-pulse shadow-[0_0_12px_rgba(34,197,94,0.8)]'
                         : submission.status === 'rejected'
-                        ? 'bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)] text-rose-500'
-                        : 'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)] text-emerald-500'
+                        ? 'bg-red-600 shadow-[0_0_12px_rgba(220,38,38,0.8)]'
+                        : 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.8)]'
                   }`}
                 />
 
@@ -240,20 +244,20 @@ export default function AssignmentTracker({ student }: AssignmentTrackerProps) {
                     {submission?.status === 'accepted' ? <CheckCircle className="w-6 h-6" /> : submission?.status === 'rejected' ? <XCircle className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Assignment Due</p>
-                    <p className="text-sm font-bold text-gray-900">{new Date(assignment.date).toLocaleDateString('en-GB')}</p>
+                    <p className={`text-[10px] font-black uppercase tracking-widest leading-none ${subTextColorClass}`}>Assignment Due</p>
+                    <p className={`text-sm font-bold ${textColorClass}`}>{new Date(assignment.date).toLocaleDateString('en-GB')}</p>
                   </div>
                 </div>
 
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h3 className="text-2xl font-black text-gray-900 mb-2 leading-tight uppercase tracking-tight">{assignment.title}</h3>
-                    <div className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                    <h3 className={`text-2xl font-black mb-2 leading-tight uppercase tracking-tight ${textColorClass}`}>{assignment.title}</h3>
+                    <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${subTextColorClass}`}>
                       <span>Assigned by:</span>
                       <FacultyNameDisplay facultyId={assignment.facultyId} initialName={assignment.facultyName} />
                     </div>
                   </div>
-                  <p className="text-sm text-gray-500 font-medium leading-relaxed">{assignment.description}</p>
+                  <p className={`text-sm font-medium leading-relaxed ${sub2TextColorClass}`}>{assignment.description}</p>
                 </div>
 
                 <AnimatePresence>

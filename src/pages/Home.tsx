@@ -4,12 +4,8 @@ import { ShieldCheck, UserCheck, GraduationCap, ArrowRight, Building2, Users, Cl
 import { motion } from 'framer-motion';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-
-import DepartmentPage from './Departments';
-import FacultyPage from './Faculty';
-import Placements from './Placements';
-import Clubs from './Clubs';
-import Gallery from './Gallery';
+import Footer from '../components/Footer';
+import AnnouncementModal from '../components/AnnouncementModal';
 
 interface Announcement {
   id: string;
@@ -21,52 +17,57 @@ interface Announcement {
 
 export default function Home() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const q = query(collection(db, 'publicAnnouncements'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
+    }, (error) => {
+      // Gracefully handle or log the error
+      console.warn("Home Announcements Sync:", error.message);
     });
     return () => unsubscribe();
   }, []);
 
   return (
-    <div className="space-y-12 md:space-y-20 pb-20">
-      {/* Running Announcement Marquee */}
-      {announcements.length > 0 && (
-        <div className="bg-rose-600/50 backdrop-blur-sm text-black py-3 px-4 mx-2 md:mx-0 rounded-4xl flex items-center shadow-lg overflow-hidden relative">
-          <div className="bg-rose-700 p-2 rounded-xl z-20 flex-shrink-0 shadow-md">
-            <Megaphone className="w-5 h-5 md:w-6 md:h-6" />
+    <>
+      <div className="space-y-16 md:space-y-24 pb-20 m-0 p-0">
+      <div className="space-y-1 md:space-y-2 p-1 pr-1">
+        {/* Running Announcement Marquee */}
+        {announcements.length > 0 && (
+          <div className="bg-rose-600/50 backdrop-blur-sm text-black py-3 px-4 mx-2 md:mx-0 rounded-4xl flex items-center shadow-lg overflow-hidden relative">
+            <button 
+              onClick={() => setIsModalOpen(true)}
+              className="bg-rose-700 p-2 text-white rounded-xl z-20 flex-shrink-0 shadow-md hover:bg-rose-800 transition-colors cursor-pointer"
+            >
+              <Megaphone className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
+            <div className="flex-1 overflow-hidden ml-4 relative">
+              <div 
+                className="font-bold whitespace-nowrap leading-normal py-1 text-sm md:text-base animate-[marquee_20s_linear_infinite] hover:[animation-play-state:paused] flex gap-12 min-w-full cursor-pointer"
+                onClick={() => setIsModalOpen(true)}
+              >
+                {announcements.map((ann, idx) => (
+                  <span key={ann.id} className="inline-flex items-center gap-2">
+                    <span className="text-rose-200">●</span> <span className="font-normal hover:text-rose-200 transition-colors">{ann.content}</span>
+                  </span>
+                ))}
+                {/* Duplicate for seamless looping if needed, or just let CSS handle base. */}
+                {announcements.map((ann, idx) => (
+                  <span key={`${ann.id}-dup`} className="inline-flex items-center gap-2" aria-hidden="true">
+                    <span className="text-rose-200">●</span> <span className="font-normal hover:text-rose-200 transition-colors">{ann.content}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
-          <p className="font-bold whitespace-nowrap ml-4 leading-none text-sm md:text-base animate-[marquee_20s_linear_infinite] hover:[animation-play-state:paused] flex gap-12 min-w-full">
-            {announcements.map((ann, idx) => (
-              <span key={ann.id} className="inline-flex items-center gap-2">
-                <span className="text-rose-200">●</span> {ann.title}: <span className="font-normal">{ann.content}</span>
-                {ann.link && (
-                  <a href={ann.link} target="_blank" rel="noopener noreferrer" className="ml-2 inline-block px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-xs font-bold transition-all">
-                    View
-                  </a>
-                )}
-              </span>
-            ))}
-            {/* Duplicate for seamless looping if needed, or just let CSS handle base. */}
-            {announcements.map((ann, idx) => (
-              <span key={`${ann.id}-dup`} className="inline-flex items-center gap-2" aria-hidden="true">
-                <span className="text-rose-200">●</span> {ann.title}: <span className="font-normal">{ann.content}</span>
-                {ann.link && (
-                  <a href={ann.link} target="_blank" rel="noopener noreferrer" className="ml-2 inline-block px-3 py-1 bg-white/20 hover:bg-white/30 rounded-full text-xs font-bold transition-all" tabIndex={-1}>
-                    View
-                  </a>
-                )}
-              </span>
-            ))}
-          </p>
-        </div>
-      )}
+        )}
+        <AnnouncementModal isOpen={isModalOpen} setIsOpen={setIsModalOpen} />
 
-      {/* Hero Section */}
-      <section className="relative min-h-[400px] md:min-h-[500px] h-auto md:h-[600px] rounded-[1.5rem] md:rounded-3xl overflow-hidden group mx-2 md:mx-0">
-        <img 
+        {/* Hero Section */}
+        <section className="relative min-h-[450px] md:min-h-[550px] h-auto md:h-[700px] rounded-[1.5rem] md:rounded-3xl overflow-hidden group mx-2 md:mx-0">
+          <img 
           src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAG6PSkDyXJ5w2MgNsvEY9vXIs18rggFEtoPbTGv0HkyEhz9llS3kt9CtnVgbHGEMNSQ4iaWHB99ThlPUXOtUKlJEe52DD2RNTPuqmjuBnNqkr2AEvUKaMzeKvwfDUnuJ2WZL--x=s1360-w1360-h1020-rw" 
           alt="College Campus" 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -89,16 +90,17 @@ export default function Home() {
               Standardized management, seamless collaboration, and academic growth all in one portal. Join our community of students and world-class faculty.
             </p>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 pt-4">
-              <Link to="/auth?role=student" className="active:scale-75 hover:transition-all hover:duration-500 rounded-3xl text-white py-3 px-6 border-2 border-rose-600 shadow-2xl hover:bg-rose-700  hover:border-blue-950 text-center font-bold">
+              <Link to="/auth?role=student" className="active:scale-75 hover:transition-all hover:duration-500 rounded-3xl text-white py-3 px-6 border-2 border-rose-600 shadow-2xl hover:bg-rose-700 hover:border-blue-950 text-center font-bold">
                 Register as Student <ArrowRight className="w-4 h-4 inline ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link to="/auth?role=faculty" className="active:scale-75 hover:transition-all hover:duration-500 rounded-3xl text-white py-3 px-6 border-2 border-rose-600 shadow-2xl hover:bg-rose-700  hover:border-blue-950 text-center font-bold">
+              <Link to="/auth?role=faculty" className="active:scale-75 hover:transition-all hover:duration-500 rounded-3xl text-white py-3 px-6 border-2 border-rose-600 shadow-2xl hover:bg-rose-700 hover:border-blue-950 text-center font-bold">
                 Faculty Portal
               </Link>
             </div>
           </motion.div>
         </div>
       </section>
+      </div>
 
       {/* Portal Features Section */}
       <section className="px-4 md:px-0">
@@ -158,13 +160,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Embedded Sections for Initial Rendering */}
-      <section className="pt-10 border-t border-gray-100"><DepartmentPage /></section>
-      <section className="pt-10 border-t border-gray-100"><FacultyPage /></section>
-      <section className="pt-10 border-t border-gray-100"><Placements /></section>
-      <section className="pt-10 border-t border-gray-100"><Clubs /></section>
-      <section className="pt-10 border-t border-gray-100"><Gallery /></section>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 }

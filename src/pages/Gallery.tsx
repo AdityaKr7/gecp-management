@@ -47,16 +47,16 @@ export default function Gallery() {
         <p className="text-sm md:text-base text-gray-500 font-medium">Capturing the moments that define our university journey.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="columns-1 sm:columns-2 md:columns-2 lg:columns-3 gap-6 space-y-6 px-4">
         {IMAGES.map((src, i) => (
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             key={i} 
-            className="rounded-[2.5rem] overflow-hidden border-8 border-white shadow-xl hover:shadow-2xl transition-all group"
+            className={`break-inside-avoid overflow-hidden border-8 border-white shadow-xl hover:shadow-2xl transition-all group ${i % 3 === 0 ? 'rounded-[3rem] rounded-tl-[4rem]' : i % 2 === 0 ? 'rounded-[2rem] rounded-br-[4rem]' : 'rounded-[2.5rem]'}`}
           >
-            <div className="aspect-[4/5] overflow-hidden">
+            <div className={`overflow-hidden ${i === 6 ? 'aspect-[3/4]' : ''}`}>
               <img 
                 src={`${import.meta.env.BASE_URL}${src.startsWith('/') ? src.slice(1) : src}`} 
                 alt={`Campus ${i}`} 

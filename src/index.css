@@ -33,6 +33,19 @@ textarea::placeholder {
 }
 
 @layer utilities {
+  .animate-marquee {
+    animation: marquee 12s linear infinite;
+  }
+  
+  @keyframes starburst {
+    0% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.1) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+  .animate-starburst {
+    animation: starburst 0.8s ease-in-out infinite;
+  }
+  
   @keyframes wiggle {
     0%, 100% { transform: rotate(0deg); }
     25% { transform: rotate(-10deg); }

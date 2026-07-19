@@ -29,14 +29,14 @@ export default function Navbar({ user }: NavbarProps) {
   ];
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm p-1">
       <div className="container mx-auto px-4 md:px-6 h-[70px] md:h-[90px] flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 group">
           <div className="p-1.5 md:p-2 bg-white rounded-lg transition-colors">
             <img 
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ1lcQnxY7B_UEBw72WAdWnaJxrIhkOtjc1Aw&s" 
-              alt="Jharkhand Logo" 
-              className="w-8 h-8 md:w-10 md:h-10 object-contain" 
+              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEeP5QNjxPsJZAMUPGX-bQj2WlQIyGQXeYDw&s" 
+              alt="GEC Palamu Logo" 
+              className="w-10 h-10 md:w-12 md:h-12 object-contain mix-blend-multiply bg-white" 
             />
           </div>
           <span className="font-bold text-lg md:text-xl tracking-tight text-gray-900">GEC Palamu</span>
@@ -60,7 +60,7 @@ export default function Navbar({ user }: NavbarProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           {/* Mobile Menu Toggle */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

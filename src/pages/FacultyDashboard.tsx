@@ -3,7 +3,7 @@ import { doc, getDoc, setDoc, onSnapshot, collection, query, where, updateDoc } 
 import { db, handleFirestoreError, OperationType, auth } from '../lib/firebase';
 import { User, FacultyProfile, StudentRequest, StudentProfile, BRANCHES } from '../types';
 const defaultProfileImg = "https://api.dicebear.com/7.x/initials/svg?seed=Profile";
-import { Camera, Check, X, ShieldCheck, Users, ClipboardCheck, LayoutDashboard, LogOut, Home, User as UserIcon, Clock, Calendar } from 'lucide-react';
+import { Camera, Check, X, ShieldCheck, Users, ClipboardCheck, LayoutDashboard, LogOut, Home, User as UserIcon, Clock, Calendar, Megaphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { signOut } from 'firebase/auth';
 import { useNavigate, Link } from 'react-router-dom';
@@ -87,6 +87,7 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
       const reqs = snap.docs.map(d => ({ ...d.data(), id: d.id } as StudentRequest));
       setRequests(reqs);
     }, (error) => {
+      // Offline/Unavailable are handled by handleFirestoreError by returning
       handleFirestoreError(error, OperationType.LIST, 'studentRequests');
     });
 
@@ -132,16 +133,24 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
   const handleAcceptRequest = async (req: StudentRequest) => {
     try {
       // 1. Update request status
-      await updateDoc(doc(db, 'studentRequests', req.id), { status: 'accepted' });
+      try {
+        await updateDoc(doc(db, 'studentRequests', req.id), { status: 'accepted' });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.UPDATE, `studentRequests/${req.id}`);
+      }
       
       // 2. Update student profile
-      await updateDoc(doc(db, 'studentProfiles', req.studentUid), {
-        isVerified: true,
-        verifiedBy: `${user.firstName} ${user.lastName}`
-      });
+      try {
+        await updateDoc(doc(db, 'studentProfiles', req.studentUid), {
+          isVerified: true,
+          verifiedBy: `${user.firstName} ${user.lastName}`
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.UPDATE, `studentProfiles/${req.studentUid}`);
+      }
       
-    } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, 'studentRequests');
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.UPDATE, 'studentRequests/studentProfiles');
     }
   };
 
@@ -368,40 +377,58 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
       </div>
       
       {/* Faculty Info Header */}
+      {/* Faculty Info Header & Utilities */}
       {(activeTab === 'overview' || activeTab === 'students' || activeTab === 'requests' || activeTab === 'attendance' || activeTab === 'assignments') && (
-        <div className="bg-gray-900 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 text-white flex flex-col xl:flex-row items-center justify-between gap-8 relative overflow-hidden transition-colors duration-300">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
-          <div className="flex flex-col sm:flex-row items-center gap-8 relative z-10 text-center sm:text-left">
-            <img src={profile.profilePicture} alt="" className="w-24 h-24 rounded-full object-cover ring-4 ring-white/10 shrink-0" />
-            <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-black">{profile.firstName} {profile.lastName}</h2>
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center sm:justify-start">
-                <span className="px-4 py-1 bg-blue-500 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full">Faculty Member</span>
-                <span className="text-gray-400 font-bold">{profile.branch}</span>
+        <div className="flex flex-col gap-8 p-1">
+          <div className="bg-gray-900 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-10 text-white flex flex-col xl:flex-row items-center justify-between gap-8 relative overflow-hidden transition-colors duration-300 flex-1">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+            <div className="flex flex-col sm:flex-row items-center gap-8 relative z-10 text-center sm:text-left">
+              <img src={profile.profilePicture} alt="" className="w-24 h-24 rounded-full object-cover ring-4 ring-white/10 shrink-0" />
+              <div className="space-y-2">
+                <h2 className="text-3xl md:text-4xl font-black">{profile.firstName} {profile.lastName}</h2>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full justify-center sm:justify-start">
+                  <span className="px-4 py-1 bg-blue-500 text-[10px] md:text-xs font-black uppercase tracking-widest rounded-full">Faculty Member</span>
+                  <span className="text-gray-400 font-bold">{profile.branch}</span>
+                </div>
               </div>
             </div>
+            <div className="flex flex-wrap top-[10px] justify-center gap-3 md:gap-4 relative z-10 w-full xl:w-auto">
+              <button 
+                onClick={() => setActiveTab('overview')}
+                className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'overview' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              >
+                <LayoutDashboard className="w-4 h-4" /> Overview
+              </button>
+              <button 
+                onClick={() => setActiveTab('attendance')}
+                className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'attendance' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              >
+                <Calendar className="w-4 h-4" /> Attendance
+              </button>
+              <button 
+                onClick={() => setActiveTab('requests')}
+                className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 relative cursor-pointer hover:scale-105 active:scale-95 ${activeTab === 'requests' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              >
+                <ClipboardCheck className="w-4 h-4" /> Requests
+                {requests.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-gray-900">{requests.length}</span>}
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap top-[10px] justify-center gap-3 md:gap-4 relative z-10 w-full xl:w-auto">
-            <button 
-              onClick={() => setActiveTab('overview')}
-              className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'overview' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-            >
-              <LayoutDashboard className="w-4 h-4" /> Overview
-            </button>
-            <button 
-              onClick={() => setActiveTab('attendance')}
-              className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'attendance' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-            >
-              <Calendar className="w-4 h-4" /> Attendance
-            </button>
-            <button 
-              onClick={() => setActiveTab('requests')}
-              className={`flex-1 md:flex-none px-6 md:px-8 py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 relative cursor-pointer hover:scale-105 active:scale-95 ${activeTab === 'requests' ? 'bg-white text-gray-900 shadow-lg' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
-            >
-              <ClipboardCheck className="w-4 h-4" /> Requests
-              {requests.length > 0 && <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] flex items-center justify-center rounded-full border-2 border-gray-900">{requests.length}</span>}
-            </button>
-          </div>
+
+          <motion.div 
+            whileHover={{ y: -4 }}
+            onClick={() => setIsAnnouncementFormOpen(true)}
+            className="w-full bg-white p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] border border-gray-100 shadow-sm cursor-pointer hover:shadow-xl hover:border-gray-200 transition-all overflow-hidden relative flex items-center gap-6"
+          >
+            <div className="absolute top-0 right-0 w-48 h-48 bg-rose-50 rounded-full -mr-24 -mt-24 transition-all duration-300"></div>
+            <div className="w-16 h-16 bg-rose-100/80 rounded-2xl flex items-center justify-center text-rose-600 shadow-inner relative z-10 shrink-0">
+              <Megaphone className="w-8 h-8" />
+            </div>
+            <div className="relative z-10">
+              <h3 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">Public Marquee</h3>
+              <p className="text-sm text-gray-400 font-bold mt-1">Manage running hero marquee announcements</p>
+            </div>
+          </motion.div>
         </div>
       )}
 
@@ -526,10 +553,9 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
             exit={{ opacity: 0, x: 20 }}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            <motion.div 
-              whileHover={{ scale: 1.02 }}
+            <div 
               onClick={() => setActiveTab('attendance')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl transition-all"
+              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl hover:border-gray-200 transition-all active:scale-[0.98]"
             >
               <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600">
                 <Calendar className="w-6 h-6" />
@@ -537,11 +563,10 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
               <h3 className="text-2xl font-black text-gray-900">Attendance</h3>
               <p className="text-5xl font-black text-indigo-600">Mark</p>
               <p className="text-sm text-gray-400 font-medium">Mark daily student attendance</p>
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.02 }}
+            </div>
+            <div 
               onClick={() => setActiveTab('assignments')}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl transition-all"
+              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl hover:border-gray-200 transition-all active:scale-[0.98]"
             >
               <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600">
                 <ClipboardCheck className="w-6 h-6" />
@@ -549,11 +574,10 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
               <h3 className="text-2xl font-black text-gray-900">Assignment</h3>
               <p className="text-5xl font-black text-amber-600">Assign</p>
               <p className="text-sm text-gray-400 font-medium">Create and manage student tasks</p>
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.02 }}
+            </div>
+            <div 
               onClick={() => setIsAlertFormOpen(true)}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl transition-all"
+              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl hover:border-gray-200 transition-all active:scale-[0.98]"
             >
               <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
                 <ShieldCheck className="w-6 h-6" />
@@ -561,19 +585,7 @@ export default function FacultyDashboard({ user }: FacultyDashboardProps) {
               <h3 className="text-2xl font-black text-gray-900">Examination Updates</h3>
               <p className="text-xl md:text-5xl font-black text-emerald-600">Alerts</p>
               <p className="text-sm text-gray-400 font-medium">Click to send exam alerts</p>
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.02 }}
-              onClick={() => setIsAnnouncementFormOpen(true)}
-              className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-4 cursor-pointer hover:shadow-xl transition-all"
-            >
-              <div className="w-12 h-12 bg-rose-100 rounded-xl flex items-center justify-center text-rose-600">
-                <LayoutDashboard className="w-6 h-6" />
-              </div>
-              <h3 className="text-2xl font-black text-gray-900">Public Marquee</h3>
-              <p className="text-xl md:text-5xl font-black text-rose-600">Announce</p>
-              <p className="text-sm text-gray-400 font-medium">Manage running hero marquee</p>
-            </motion.div>
+            </div>
           </motion.div>
         ) : activeTab === 'attendance' ? (
           <motion.div

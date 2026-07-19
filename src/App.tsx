@@ -29,7 +29,7 @@ function AppContent({ user }: { user: User | null }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {(!isSyllabus && !isRoadmaps) && <Navbar user={user} />}
-      <main className={(isSyllabus || isRoadmaps) ? "flex-1" : "container mx-auto px-4 md:px-6 py-6 md:py-12 flex-1"}>
+      <main className={(isSyllabus || isRoadmaps) ? "flex-1 p-1" : "w-full m-0 p-1 flex-1"}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={!user ? <Auth /> : <Navigate to={user.role === 'student' ? '/student-dashboard' : '/faculty-dashboard'} />} />
@@ -65,11 +65,22 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
-        if (userDoc.exists()) {
-          setUser(userDoc.data() as User);
-        } else {
-          setUser(null);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUser(userDoc.data() as User);
+          } else {
+            setUser(null);
+          }
+        } catch (error: any) {
+          if (error.message?.includes('offline') || error.code === 'unavailable') {
+            console.warn("Network error while trying to fetch user data. Operating without user data temporarily.", error.message);
+            // Don't fully handle error to avoid crashing layout; user might appear signed out though.
+            setUser(null); 
+          } else {
+            setUser(null);
+            console.error("Error fetching user data:", error);
+          }
         }
       } else {
         setUser(null);
@@ -78,6 +89,14 @@ export default function App() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Detect page refresh
+    const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+    if (entry && entry.type === 'reload') {
+      window.location.hash = '/';
+    }
   }, []);
 
   if (loading) {

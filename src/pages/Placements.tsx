@@ -59,7 +59,7 @@ export default function Placements() {
   return (
     <div className="space-y-12 md:space-y-20 pb-20 px-4 md:px-0">
       {/* Header Section */}
-      <header className="relative py-12 md:py-20 px-6 md:px-8 bg-blue-600 rounded-[2rem] md:rounded-[4rem] text-white overflow-hidden text-center shadow-2xl">
+      <header className="relative py-12 md:py-20 px-6 md:px-8 bg-blue-600 rounded-[2rem] md:rounded-[4rem] text-white overflow-hidden text-center shadow-2xl pl-1">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
         <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 flex flex-col items-center space-y-6 md:space-y-8">
           <div className="relative flex flex-col md:flex-row items-center gap-6 md:gap-12 group/photo">

@@ -51,7 +51,7 @@ export default function Departments() {
 
   return (
     <div className="space-y-12 pb-20 px-4 md:px-0">
-      <header className="text-center space-y-4 max-w-2xl mx-auto">
+      <header className="text-center space-y-4 max-w-2xl mx-auto pl-1">
         <h1 className="text-3xl md:text-5xl font-black text-gray-900 tracking-tight leading-tight">Academic Departments</h1>
         <p className="text-sm md:text-base text-gray-500 font-medium">Explore our specialized branches of engineering excellence.</p>
       </header>
