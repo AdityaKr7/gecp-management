@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+  import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, UserCheck, GraduationCap, ArrowRight, Building2, Users, ClipboardList, BookOpen, Megaphone } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -68,10 +68,9 @@ export default function Home() {
         {/* Hero Section */}
         <section className="relative min-h-[450px] md:min-h-[550px] h-auto md:h-[700px] rounded-[1.5rem] md:rounded-3xl overflow-hidden group mx-2 md:mx-0">
           <img 
-          src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAG6PSkDyXJ5w2MgNsvEY9vXIs18rggFEtoPbTGv0HkyEhz9llS3kt9CtnVgbHGEMNSQ4iaWHB99ThlPUXOtUKlJEe52DD2RNTPuqmjuBnNqkr2AEvUKaMzeKvwfDUnuJ2WZL--x=s1360-w1360-h1020-rw" 
+          src="https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80" 
           alt="College Campus" 
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-          referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-linear-to-r from-black/90 via-black/50 to-transparent flex items-center px-4 md:px-12 py-8 md:py-0">
           <motion.div 
